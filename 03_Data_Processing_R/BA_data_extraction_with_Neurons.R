@@ -13,7 +13,6 @@ base_path <- "/Users/izgivarol/Documents/Heid Uni/BA/Results/ROI Analysis/Cell P
 syp      <- read_csv(file.path(base_path,"Overlap_BASYP_puncta.csv"), show_col_types = FALSE)
 strict   <- read_csv(file.path(base_path,"Overlap_BASYP_on_BDA_strict.csv"), show_col_types = FALSE)
 loose    <- read_csv(file.path(base_path,"Overlap_BASYP_on_BDA_loose.csv"), show_col_types = FALSE)
-neurons  <- read_csv(file.path(base_path,"Overlap_BANeurons.csv"), show_col_types = FALSE)
 image_df <- read_csv(file.path(base_path,"Overlap_BAImage.csv"), show_col_types = FALSE)
 
 # ------------------------------
@@ -38,7 +37,6 @@ clean_meta <- function(df){
 syp     <- clean_meta(syp)
 strict  <- clean_meta(strict)
 loose   <- clean_meta(loose)
-neurons <- clean_meta(neurons)
 
 # ------------------------------
 # 3. COUNT OBJECTS PER IMAGE
@@ -56,10 +54,6 @@ loose_syp <- loose %>%
   group_by(ImageNumber,Cohort,Animal,Sample) %>%
   summarise(loose_syp_on_bda=n(), .groups="drop")
 
-neun_summary <- neurons %>%
-  group_by(ImageNumber,Cohort,Animal,Sample) %>%
-  summarise(neun_cells=n(), .groups="drop")
-
 # ------------------------------
 # 4. BUILD IMAGE SUMMARY TABLE
 # ------------------------------
@@ -67,18 +61,13 @@ neun_summary <- neurons %>%
 image_summary <- total_syp %>%
   full_join(strict_syp, by=c("ImageNumber","Cohort","Animal","Sample")) %>%
   full_join(loose_syp,  by=c("ImageNumber","Cohort","Animal","Sample")) %>%
-  left_join(neun_summary, by=c("ImageNumber","Cohort","Animal","Sample")) %>%
   mutate(
     
     strict_syp_on_bda = replace_na(strict_syp_on_bda,0),
     loose_syp_on_bda  = replace_na(loose_syp_on_bda,0),
-    neun_cells        = replace_na(neun_cells,0),
     
     strict_fraction = ifelse(total_syp>0, strict_syp_on_bda/total_syp, NA),
     loose_fraction  = ifelse(total_syp>0, loose_syp_on_bda/total_syp, NA),
-    
-    strict_synapses_per_neuron = ifelse(neun_cells>0, strict_syp_on_bda/neun_cells, NA),
-    loose_synapses_per_neuron  = ifelse(neun_cells>0, loose_syp_on_bda/neun_cells, NA)
     
   ) %>%
   arrange(Cohort,as.numeric(Animal),Sample,ImageNumber)
